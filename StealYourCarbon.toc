@@ -14,6 +14,8 @@
 ## X-LoadOn-Slash: /carbon, /syc
 ## X-LoadOn-Merchant: true
 ## X-LoadOn-Bank: true
+## X-LoadOn-Events: GUILDBANKFRAME_OPENED
+## X-LoadOn-GUILDBANKFRAME_OPENED: AddonLoader:LoadAddOn("StealYourCarbon")
 
 tekKonfig\tekKonfig.xml
 CallbackHandler-1.0.lua
