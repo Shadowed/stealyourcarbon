@@ -55,6 +55,8 @@ end
 --      Slash Command      --
 -----------------------------
 
+SLASH_SYC1 = nil
+
 SLASH_CARBON1 = "/carbon"
 SLASH_CARBON2 = "/syc"
 SlashCmdList.CARBON = function(input)
@@ -105,7 +107,9 @@ function StealYourCarbon:ADDON_LOADED(event, addon)
 	self:UnregisterEvent("ADDON_LOADED")
 	self:RegisterEvent("MERCHANT_SHOW")
 	self:RegisterEvent("BANKFRAME_OPENED")
-
+	self:RegisterEvent("GUILDBANKFRAME_OPENED")
+	
+	if( GuildBankFrame and GuildBankFrame:IsVisible() ) then self:GUILDBANKFRAME_OPENED() end
 	if MerchantFrame:IsVisible() then self:MERCHANT_SHOW() end
 	if BankFrame:IsVisible() then self:BANKFRAME_OPENED() end
 end
@@ -192,6 +196,66 @@ local function SwapFromBank(id, partial)
 	end
 end
 
+local function SwapFromGuildBank(id, partial)
+	for tab=1, GetNumGuildBankTabs() do
+		for slot=1, MAX_GUILDBANK_SLOTS_PER_TAB do
+			local itemID = GetGuildBankItemLink(tab, slot)
+			itemID = itemID and ids[itemID]
+			if( itemID == id ) then
+				if( partial ) then
+					PickupGuildBankItem(tab, slot)
+					
+					for playerBag=0, 4 do
+						for playerSlot=1, GetContainerNumSlots(playerBag) do
+							local playerItemID = GetContainerItemLink(playerBag, playerSlot)
+							playerItemID = playerItemID and ids[playerItemID]
+							if( playerItemID == id ) then
+								PickupContainerItem(playerBag, playerSlot)
+								return
+							end
+						end
+					end
+				else
+					AutoStoreGuildBankItem(tab, slot)
+					return
+				end
+			end
+		end
+	end
+end
+
+local function GetTotalGuildBanked(id)
+	local quantity = 0
+	for tab=1, GetNumGuildBankTabs() do
+		for slot=1, MAX_GUILDBANK_SLOTS_PER_TAB do
+			local itemID = GetGuildBankItemLink(tab, slot)
+			itemID = itemID and ids[itemID]
+			if( itemID == id ) then
+				quantity = quantity + select(2, GetGuildBankItemInfo(tab, slot))			
+			end
+		end
+	end
+	
+	return quantity
+end
+
+function StealYourCarbon:GUILDBANKBAGSLOTS_CHANGED()
+	self:UnregisterEvent("GUILDBANKBAGSLOTS_CHANGED")
+	
+	for id, num in pairs(self.db.stocklist) do
+		local inbag = GetItemCount(id)
+		if( inbag < num and GetTotalGuildBanked(id) > inbag ) then
+			SwapFromGuildBank(id, inbag ~= 0)
+		end
+	end
+end
+
+function StealYourCarbon:GUILDBANKFRAME_OPENED()
+	if( HasTradeskillBag() or not self.db.autoGuild or self.db.autoGuild == "" or string.lower(GetGuildInfo("player") or "") ~= string.lower(self.db.autoGuild) ) then return end
+
+	-- Wait for the first bag slots event, this way we're sure we have the latest data
+	self:RegisterEvent("GUILDBANKBAGSLOTS_CHANGED")
+end
 
 function StealYourCarbon:BANKFRAME_OPENED()
 	if HasTradeskillBag() then return end
