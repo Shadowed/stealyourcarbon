@@ -1,4 +1,4 @@
-
+	
 local NUMROWS, NUMCOLS, ICONSIZE, ICONGAP, GAP, EDGEGAP = 5, 10, 32, 3, 8, 16
 local tekcheck = LibStub("tekKonfig-Checkbox")
 local rows, offset, scrollbar, tradeview, grouptext = {}, 0
@@ -25,12 +25,57 @@ frame:SetScript("OnShow", function(frame)
 	chatter.tiptext = "Give chat feedback when purchasing items."
 	chatter:SetScript("OnClick", function(self) checksound(self); StealYourCarbon.db.chatter = not StealYourCarbon.db.chatter end)
 	chatter:SetChecked(StealYourCarbon.db.chatter)
-
+	
 
 	local upgradewater = tekcheck.new(frame, nil, "Upgrade water", "TOPLEFT", overstock, "BOTTOMLEFT", 0, -GAP)
 	upgradewater.tiptext = "Automatically upgrade to better water as player levels."
 	upgradewater:SetScript("OnClick", function(self) checksound(self); StealYourCarbon.db.upgradewater = not StealYourCarbon.db.upgradewater end)
 	upgradewater:SetChecked(StealYourCarbon.db.upgradewater)
+
+
+	local editbox = CreateFrame('EditBox', nil, frame)
+	editbox:SetAutoFocus(false)
+	editbox:SetHeight(32)
+	editbox:SetWidth(120)
+	editbox:SetFontObject('GameFontHighlightSmall')
+	editbox:SetPoint("TOPLEFT", chatter, "BOTTOMLEFT", GAP, -GAP)
+	editbox.tiptext = "Name of the guild that can be used to automatically restock reagents from.\n\nLeave blank to disable restocking from a guild bank."
+	editbox:SetText(StealYourCarbon.db.autoGuild or "")
+	editbox:SetScript("OnHide", function() GameTooltip:Hide() end)
+	editbox:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:SetText(self.tiptext, nil, nil, nil, nil, true)
+	end)
+	
+	
+	local label = editbox:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+	label:SetText("Guild to restock from")
+	label:SetPoint("BOTTOMLEFT", editbox, "TOPLEFT", 0, -2)
+	
+	local left = editbox:CreateTexture(nil, "BACKGROUND")
+	left:SetWidth(8) left:SetHeight(20)
+	left:SetPoint("LEFT", -5, 0)
+	left:SetTexture("Interface\\Common\\Common-Input-Border")
+	left:SetTexCoord(0, 0.0625, 0, 0.625)
+	
+	local right = editbox:CreateTexture(nil, "BACKGROUND")
+	right:SetWidth(8) right:SetHeight(20)
+	right:SetPoint("RIGHT", 0, 0)
+	right:SetTexture("Interface\\Common\\Common-Input-Border")
+	right:SetTexCoord(0.9375, 1, 0, 0.625)
+	
+	local center = editbox:CreateTexture(nil, "BACKGROUND")
+	center:SetHeight(20)
+	center:SetPoint("RIGHT", right, "LEFT", 0, 0)
+	center:SetPoint("LEFT", left, "RIGHT", 0, 0)
+	center:SetTexture("Interface\\Common\\Common-Input-Border")
+	center:SetTexCoord(0.0625, 0.9375, 0, 0.625)
+	
+	editbox:SetScript("OnEscapePressed", editbox.ClearFocus)
+	editbox:SetScript("OnEnterPressed", editbox.ClearFocus)
+	editbox:SetScript("OnTextChanged", function(self)
+		StealYourCarbon.db.autoGuild = self:GetText()
+	end)
 
 
 	local group = LibStub("tekKonfig-Group").new(frame, nil, "TOP", upgradewater, "BOTTOM", 0, -EDGEGAP-GAP)
